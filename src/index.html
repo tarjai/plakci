@@ -185,6 +185,45 @@
   .prompt-head button{background:none;border:0;color:var(--accent);font-size:12px;padding:0}
   .sp-status{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap;font-size:13.5px}
 
+  /* --- Oturum paneli --- */
+  .sessions{position:fixed;left:0;top:0;bottom:0;width:240px;z-index:45;background:var(--bg2);border-right:1px solid var(--line);display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .22s}
+  body.sess-open .sessions{transform:none}
+  .sess-head{display:flex;align-items:center;height:62px;padding:0 12px 0 16px;border-bottom:1px solid var(--line)}
+  .sess-head b{flex:1;font-family:Fraunces,serif;font-weight:500;font-size:19px}
+  .sess-x{background:none;border:0;color:var(--muted);font-size:22px;padding:0 6px;line-height:1}
+  .sess-x:hover{color:var(--accent)}
+  .sess-list{flex:1;overflow:auto;padding:8px}
+  .sess-item{display:flex;align-items:center;gap:4px;padding:8px 8px 8px 10px;border-radius:10px;cursor:pointer;border:1px solid transparent}
+  .sess-item:hover{background:#25231f}
+  .sess-item.on{background:#2c2822;border-color:#4a3f2c}
+  .sess-item .nm{flex:1;min-width:0}
+  .sess-item .nm b{display:block;font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sess-item.on .nm b{color:var(--accent)}
+  .sess-item .nm span{font-size:11.5px;color:var(--dim)}
+  .sess-item .ic{background:none;border:0;color:var(--dim);font-size:13px;padding:3px 5px;border-radius:6px;opacity:0;transition:opacity .15s}
+  .sess-item:hover .ic,.sess-item.on .ic{opacity:1}
+  .sess-item .ic:hover{color:var(--text);background:#3a3631}
+  .sess-item .ic.del:hover{color:var(--accent2)}
+  .sess-item input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--accent);border-radius:7px;padding:5px 8px;color:var(--text);font:inherit;font-size:14px;outline:none}
+  .sess-new{margin:10px 12px 14px;justify-content:center}
+  .sess-scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:44;display:none}
+  .sess-toggle{padding:6px 11px}
+  .cur-sess{font-size:12.5px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 10px;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  @media (min-width:1100px){
+    body.sess-open{padding-left:240px}
+    body.sess-open .player{left:240px}
+  }
+  @media (max-width:1099px){ body.sess-open .sess-scrim{display:block} }
+  @media (max-width:600px){ .cur-sess{display:none} }
+
+  /* --- Tür önerileri: en fazla 2 satır --- */
+  .suggest-wrap{display:flex;gap:6px;align-items:flex-start;margin-bottom:6px}
+  .suggest-wrap .suggest{flex:1;max-height:58px;overflow:hidden;margin:0}
+  .suggest button{height:26px}
+  .suggest-more{flex:none;background:none;border:1px solid var(--line);color:var(--muted);border-radius:999px;width:26px;height:26px;padding:0;font-size:13px}
+  .suggest-more:hover{border-color:var(--accent);color:var(--accent)}
+  .row-head .mv{min-width:30px;justify-content:center}
+
   .sync{font-size:12px;color:var(--dim);white-space:nowrap}
   .sync[data-state=err]{color:var(--accent2)}
   @media (max-width:760px){ .sync{display:none} .sync[data-state=err]{display:inline} }
@@ -203,9 +242,21 @@
 </style>
 </head>
 <body>
+<aside class="sessions" id="sessions" aria-label="Oturumlar">
+  <div class="sess-head">
+    <b>Oturumlar</b>
+    <button class="sess-x" id="sessClose" title="Paneli kapat">‹</button>
+  </div>
+  <div class="sess-list" id="sessList"></div>
+  <button class="btn small primary sess-new" id="sessNew">+ Yeni oturum</button>
+</aside>
+<div class="sess-scrim" id="sessScrim"></div>
+
 <header class="top">
   <div class="wrap">
+    <button class="btn sess-toggle" id="sessToggle" title="Oturumlar">☰</button>
     <div class="logo"><span class="disc"></span><span class="t">Plakçı</span></div>
+    <span class="cur-sess" id="curSess" title="Geçerli oturum"></span>
     <nav class="nav">
       <button id="navDiscover" class="on">Keşfet</button>
       <button id="navLater">Sonra dinle <span class="badge soft" id="laterCount">0</span></button>
@@ -247,7 +298,10 @@
   <section style="margin-top:46px">
     <div class="row-head"><h2>Türlere göre</h2><span class="sub">Seçtiğin türlerden, daha önce görmediklerin</span></div>
     <div class="genre-bar" id="genreBar"></div>
-    <div class="suggest" id="genreSuggest"></div>
+    <div class="suggest-wrap">
+      <div class="suggest" id="genreSuggest"></div>
+      <button class="suggest-more" id="suggestShuffle" title="Başka türler göster">↻</button>
+    </div>
     <div id="genreRows"></div>
   </section>
 </main>
@@ -278,7 +332,7 @@
   </div>
   <div class="grid later-grid" id="favGrid"></div>
 </main>
-<footer>Veriler: Last.fm · Açıklamalar: Claude Haiku · Çalma: Spotify · Her şey bu tarayıcıda saklanır</footer>
+<footer>Veriler: Last.fm · Açıklamalar: Claude Haiku · Çalma: Spotify · Kayıt: Supabase</footer>
 
 <div class="player" id="player" hidden>
   <div class="wrap">
@@ -323,6 +377,11 @@
   <p class="hint" id="redirectWarn" hidden style="color:var(--accent2)"></p>
   <div class="sp-status"><span id="spState">Bağlı değil</span><button class="btn small sp" id="spConnect" type="button">Spotify'a bağlan</button><button class="btn small" id="spDisconnect" type="button" hidden>Bağlantıyı kes</button></div>
   <label class="check"><input type="checkbox" id="spAuto"> Beğendiğim albümleri Spotify kütüphaneme de kaydet</label>
+
+  <h3>Yasaklı türler</h3>
+  <label for="banned">Virgülle ayır</label>
+  <input id="banned" type="text" placeholder="örn. metal, country, k-pop">
+  <p class="hint">Bu türler yeni oturumlarda, tür önerilerinde ve albüm önerilerinde çıkmaz. "metal" yazarsan "black metal", "nu-metal", "metalcore" gibi alt türler de elenir. Tüm oturumlar için geçerli.</p>
 
   <h3>Prompt'lar</h3>
   <details class="prompts">
@@ -372,8 +431,13 @@ const DEFAULTS = {
   spClientId: "", sp: null, spAutoSave: false, spIds: {},
   courage: 40,
   liked: [], later: [], favs: [], disliked: [], seen: {}, artistSeen: {}, seedUse: {}, tagPage: {},
-  genres: ["indie rock", "jazz", "anadolu rock"], descs: {}, whys: {}, years: {}
+  genres: ["indie rock", "jazz", "anadolu rock"], descs: {}, whys: {}, years: {},
+  bannedGenres: []
 };
+// Her oturumun kendine ait verisi; geri kalan her şey (ayarlar, prompt'lar, önbellekler) ortaktır
+const SESSION_KEYS = ["liked", "later", "favs", "disliked", "seen", "artistSeen", "seedUse", "tagPage", "genres", "courage"];
+const sessionDefaults = () => ({ liked: [], later: [], favs: [], disliked: [], seen: {}, artistSeen: {}, seedUse: {}, tagPage: {}, genres: [], courage: 40 });
+const SESS_KEY = "plakci:sessions";
 const PRESET_GENRES = ["rock","indie","alternative","post-rock","shoegaze","dream pop","psychedelic","krautrock","jazz","soul","funk","blues","folk","ambient","electronic","trip-hop","hip-hop","türkçe rap","anadolu rock","turkish","arabesk","metal","punk","post-punk","new wave","classical","bossa nova","afrobeat","city pop","r&b"];
 
 const S = load();
@@ -392,8 +456,28 @@ function load(){
 function trim(obj, max){ const ks = Object.keys(obj); if (ks.length > max) for (const k of ks.slice(0, ks.length - max)) delete obj[k]; }
 function save(){
   trim(S.descs, 400); trim(S.whys, 600); trim(S.spIds, 800); trim(S.years, 1500);
-  try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) { console.warn("Kaydedilemedi", e); }
+  if (SESS.current){ SESS.data[SESS.current] = sessionSnapshot(); touchSession(SESS.current); }
+  try { localStorage.setItem(LS_KEY, JSON.stringify(S)); localStorage.setItem(SESS_KEY, JSON.stringify(SESS)); } catch (e) { console.warn("Kaydedilemedi", e); }
   scheduleSync();
+}
+
+/* ================= Oturumlar (yerel kopya) ================= */
+// SESS = { current, list: [{ id, name, created_at, updated_at }], data: { id: oturumVerisi } }
+const SESS = (() => {
+  try { const s = JSON.parse(localStorage.getItem(SESS_KEY) || "null"); if (s?.list) return s; } catch {}
+  return { current: null, list: [], data: {} };
+})();
+const sessionSnapshot = () => structuredClone(Object.fromEntries(SESSION_KEYS.map(k => [k, S[k]])));
+function applySession(id){
+  SESS.current = id;
+  Object.assign(S, sessionDefaults(), structuredClone(SESS.data[id] || {}));
+}
+function touchSession(id){ const s = SESS.list.find(x => x.id === id); if (s) s.updated_at = new Date().toISOString(); }
+function newSessionMeta(name){ const now = new Date().toISOString(); return { id: crypto.randomUUID(), name, created_at: now, updated_at: now }; }
+function nextSessionName(){
+  let n = SESS.list.length + 1;
+  while (SESS.list.some(s => s.name === `Oturum ${n}`)) n++;
+  return `Oturum ${n}`;
 }
 
 /* ================= Supabase: şifreli oturum + bulut kaydı ================= */
@@ -403,7 +487,14 @@ const sb = CFG.supabaseUrl && CFG.supabaseAnonKey
   ? createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true, storageKey: "plakci-auth" } })
   : null;
 let userId = null, syncT = null, syncing = false, syncAgain = false;
-const cloudData = () => Object.fromEntries(Object.entries(S).filter(([k]) => !LOCAL_ONLY.includes(k)));
+const cloudData = () => ({
+  ...Object.fromEntries(Object.entries(S).filter(([k]) => !LOCAL_ONLY.includes(k) && !SESSION_KEYS.includes(k))),
+  currentSession: SESS.current
+});
+const sessionRow = (id) => {
+  const m = SESS.list.find(s => s.id === id);
+  return { id, user_id: userId, name: m?.name || "Oturum", data: SESS.data[id] || sessionDefaults(), created_at: m?.created_at, updated_at: m?.updated_at || new Date().toISOString() };
+};
 function setSyncState(state){
   const el = document.querySelector("#syncState");
   if (!el) return;
@@ -419,28 +510,57 @@ async function pushState(){
   if (syncing){ syncAgain = true; return; }
   syncing = true; setSyncState("saving");
   try {
-    const { error } = await sb.from("app_state").upsert({ user_id: userId, data: cloudData(), updated_at: new Date().toISOString() });
-    if (error) throw error;
+    const [a, b] = await Promise.all([
+      sb.from("app_state").upsert({ user_id: userId, data: cloudData(), updated_at: new Date().toISOString() }),
+      SESS.current ? sb.from("plakci_sessions").upsert(sessionRow(SESS.current)) : { error: null }
+    ]);
+    if (a.error || b.error) throw (a.error || b.error);
     setSyncState("ok");
   } catch (e){ console.warn("Supabase kaydı başarısız", e); setSyncState("err"); }
   syncing = false;
   if (syncAgain){ syncAgain = false; pushState(); }
 }
+async function flushSync(){ clearTimeout(syncT); if (sb && userId) await pushState(); }
 async function pullState(){
-  const { data, error } = await sb.from("app_state").select("data").eq("user_id", userId).maybeSingle();
-  if (error) throw error;
-  if (data?.data){
-    // Buluttaki kayıt esas alınır; cihaza özel alanlar korunur
-    for (const k of Object.keys(S)) if (!LOCAL_ONLY.includes(k)) delete S[k];
-    Object.assign(S, structuredClone(DEFAULTS), Object.fromEntries(Object.entries(S).filter(([k]) => LOCAL_ONLY.includes(k))), data.data);
-    try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch {}
-  } else {
-    await pushState();    // ilk giriş: bu cihazdaki veriyi buluta taşı
+  const [{ data: st, error: e1 }, { data: rows, error: e2 }] = await Promise.all([
+    sb.from("app_state").select("data").eq("user_id", userId).maybeSingle(),
+    sb.from("plakci_sessions").select("id,name,data,created_at,updated_at").eq("user_id", userId).order("created_at")
+  ]);
+  if (e1 || e2) throw (e1 || e2);
+  const cloud = st?.data || null;
+  if (cloud){
+    // Buluttaki ortak veri esas alınır; cihaza özel alanlar korunur
+    const local = Object.fromEntries(Object.entries(S).filter(([k]) => LOCAL_ONLY.includes(k)));
+    for (const k of Object.keys(S)) delete S[k];
+    Object.assign(S, structuredClone(DEFAULTS), local, cloud);
   }
+  if (rows.length){
+    SESS.list = rows.map(({ id, name, created_at, updated_at }) => ({ id, name, created_at, updated_at }));
+    SESS.data = Object.fromEntries(rows.map(r => [r.id, r.data]));
+    const cur = cloud?.currentSession;
+    applySession(SESS.list.some(s => s.id === cur) ? cur : SESS.list[0].id);
+  } else {
+    // İlk kez: eski tek-kayıt verisini (bulut ya da bu cihaz) "Oturum 1" yap
+    const meta = newSessionMeta("Oturum 1");
+    SESS.list = [meta]; SESS.data = { [meta.id]: Object.fromEntries(SESSION_KEYS.map(k => [k, structuredClone(S[k] ?? sessionDefaults()[k])])) };
+    applySession(meta.id);
+  }
+  delete S.currentSession;
+  try { localStorage.setItem(LS_KEY, JSON.stringify(S)); localStorage.setItem(SESS_KEY, JSON.stringify(SESS)); } catch {}
+  if (!rows.length || !cloud) await pushState();
+}
+// Bulut olmadan (yerel kurulum) oturumları yalnızca bu tarayıcıda tut
+function initLocalSessions(){
+  if (!SESS.list.length){
+    const meta = newSessionMeta("Oturum 1");
+    SESS.list = [meta]; SESS.data = { [meta.id]: sessionSnapshot() };
+    SESS.current = meta.id;
+  }
+  applySession(SESS.list.some(s => s.id === SESS.current) ? SESS.current : SESS.list[0].id);
 }
 // Şifre bir kez girilir; Supabase oturumu tarayıcıda saklanır ve kendini yeniler
 async function ensureAuth(){
-  if (!sb) return;
+  if (!sb){ initLocalSessions(); return; }
   const { data: { session } } = await sb.auth.getSession();
   if (session){ userId = session.user.id; }
   else {
@@ -458,7 +578,7 @@ async function ensureAuth(){
     });
   }
   try { await pullState(); setSyncState("ok"); }
-  catch (e){ console.warn(e); setSyncState("err"); }
+  catch (e){ console.warn(e); setSyncState("err"); initLocalSessions(); }
 }
 
 /* ================= Yardımcılar ================= */
@@ -566,8 +686,9 @@ const tagPageBase = () => 1 + Math.round(C() * 14);
 const onScreen = new Set();
 const isLiked = (id) => S.liked.some(l => l.id === id);
 const laterItem = (id) => S.later.find(x => x.id === id);
+const bannedAlbums = new Set();   // etiketleri yasaklı türe çıkan albümler (bu sayfa açıkken)
 function blocked(al){
-  if (isLiked(al.id) || laterItem(al.id) || S.disliked.includes(al.id) || onScreen.has(al.id)) return true;
+  if (isLiked(al.id) || laterItem(al.id) || S.disliked.includes(al.id) || onScreen.has(al.id) || bannedAlbums.has(al.id)) return true;
   const t = S.seen[al.id];
   return !!(t && Date.now() - t < SEEN_DAYS * DAY);
 }
@@ -613,7 +734,7 @@ async function seedTags(seed){
       const k = await lfm("artist.gettoptags", { artist: seed.artist });
       tags = tags.concat(arr(k.toptags?.tag).map(t => t.name));
     }
-    return tags.filter(t => !GENERIC_TAGS.test(t) && norm(t) !== norm(seed.artist)).slice(0, 5);
+    return tags.filter(t => !GENERIC_TAGS.test(t) && norm(t) !== norm(seed.artist) && !isBanned(t)).slice(0, 5);
   } catch { return []; }
 }
 
@@ -696,13 +817,14 @@ async function moodCandidates(mood){
 
 /* ================= Satır (5'li yatay öneri) ================= */
 class Row {
-  constructor({ title, sub, loader, removable, onRemove }){
+  constructor({ title, sub, loader, removable, onRemove, controls = [] }){
     this.loader = loader; this.items = []; this.pool = [];
     this.el = h("section", { class: "row" });
     this.subEl = h("span", { class: "sub" }, sub || "");
     this.grid = h("div", { class: "grid" });
     this.el.append(h("div", { class: "row-head" },
       h("h2", {}, title), this.subEl, h("div", { class: "spacer" }),
+      ...controls,
       h("button", { class: "btn small", onclick: () => this.refresh() }, "↻ Yenile"),
       removable && h("button", { class: "btn small", title: "Kaldır", onclick: onRemove }, "✕")
     ), this.grid);
@@ -782,7 +904,7 @@ function renderCard(c, row, i){
         al.url && h("a", { class: "act", href: al.url, target: "_blank", rel: "noopener", title: "Last.fm" }, "fm"),
         favButton(al)
       )));
-  enrich(al, c.ctx, { tagsEl, desc, reasonText });
+  enrich(al, c.ctx, { tagsEl, desc, reasonText, onBanned: () => { if (row.items[i] === c) row.replace(i); } });
   return card;
 }
 /* ---- Çıkış yılı (MusicBrainz, anahtarsız; saniyede 1 istek sınırına uyulur) ---- */
@@ -861,8 +983,10 @@ function albumInfo(al){
   }).catch(() => ({ tags: [], wiki: "", tracks: [], listeners: 0 })));
   return infoMemo.get(al.id);
 }
-async function enrich(al, ctx, { tagsEl, desc, reasonText }){
+async function enrich(al, ctx, { tagsEl, desc, reasonText, onBanned }){
   const info = await albumInfo(al);
+  // Yasaklı bir türün etiketini taşıyan albüm sessizce başka öneriyle değiştirilir
+  if (onBanned && info.tags.some(isBanned)){ bannedAlbums.add(al.id); onBanned(); return; }
   tagsEl.dataset.tags = info.tags.join("|");
   tagsEl.replaceChildren(...info.tags.slice(0, 3).map(t => h("span", { class: "tag" }, t)));
   const whyKey = ctx ? al.id + "|" + ctx.key : null;
@@ -984,7 +1108,8 @@ async function moodToTags(text){
       schema: { type: "object", properties: { baslik: { type: "string" }, etiketler: { type: "array", items: { type: "string" } } }, required: ["baslik", "etiketler"], additionalProperties: false },
       maxTokens: 1000
     });
-    if (out?.etiketler?.length) return { title: out.baslik || text, text, tags: out.etiketler.slice(0, 6).map(t => t.toLowerCase()) };
+    const tags = (out?.etiketler || []).map(t => t.toLowerCase()).filter(t => !isBanned(t)).slice(0, 6);
+    if (tags.length) return { title: out.baslik || text, text, tags };
   } catch (e){ console.warn(e); if (e instanceof Anthropic.AuthenticationError) toast("Anthropic API key geçersiz görünüyor."); }
   return manual();
 }
@@ -1027,6 +1152,7 @@ function updateCounts(){
     h("button", { title: "Kaldır", onclick: () => toggleLike(l) }, "×")
   )) : [h("p", { class: "hint", style: "padding:20px 0" }, "Henüz beğendiğin albüm yok.")]));
   $("#favCount").textContent = S.favs.length;
+  if (!document.querySelector(".sess-item input")) renderSessions();
   if (!$("#viewLater").hidden) renderLater();
   if (!$("#viewFavs").hidden) renderFavs();
 }
@@ -1361,29 +1487,183 @@ const forYou = new Row({ title: "Senin için", sub: "Beğendiklerine ve puanlar�
 forYou.emptyText = "Yukarıya sevdiğin bir albümü yaz, 5 öneriyle başlayalım.";
 $("#forYou").replaceWith(forYou.el);
 
+/* ================= Türler: rastgele öneriler, yasaklılar, sıralama ================= */
 const genreRows = new Map();
+let tagPool = null, suggestOffset = 0;
+// Last.fm'in popüler etiketlerinden rastgele bir havuz (her sayfa açılışında farklı sayfa ve sıra)
+async function loadTagPool(){
+  if (tagPool) return tagPool;
+  let names = [];
+  try {
+    const pages = [1, 2, 3, 4, 5].sort(() => Math.random() - 0.5).slice(0, 2);
+    const res = await Promise.all(pages.map(p => lfm("chart.gettoptags", { page: p, limit: 100 }).catch(() => null)));
+    names = res.flatMap(j => arr(j?.tags?.tag).map(t => (t.name || "").toLocaleLowerCase("tr").trim()));
+  } catch {}
+  names = names.filter(t => t && t.length <= 22 && !GENERIC_TAGS.test(t) && !/^\d+$/.test(t));
+  if (!names.length) names = [...PRESET_GENRES];
+  tagPool = [...new Set(names)].sort(() => Math.random() - 0.5);
+  return tagPool;
+}
+// "metal" yasağı: metal, black metal, metalcore, nu-metal… (bir kelimenin başında geçen her eşleşme)
+function isBanned(tag){
+  const t = " " + norm(tag).replace(/[-_/&]/g, " ");
+  return (S.bannedGenres || []).some(b => b && t.includes(" " + norm(b).replace(/[-_/&]/g, " ")));
+}
+async function randomGenres(n){
+  const pool = (await loadTagPool()).filter(t => !isBanned(t));
+  return pool.sort(() => Math.random() - 0.5).slice(0, n);
+}
 function renderGenres(){
   $("#genreBar").replaceChildren(
     ...S.genres.map(g => h("span", { class: "chip" }, g, h("button", { title: "Kaldır", onclick: () => removeGenre(g) }, "×"))),
     h("form", { class: "genre-add", onsubmit: (e) => { e.preventDefault(); const v = e.target.g.value.trim(); if (v) addGenre(v); e.target.reset(); } },
       h("input", { name: "g", placeholder: "+ tür ekle (örn. shoegaze)" }))
   );
-  $("#genreSuggest").replaceChildren(...PRESET_GENRES.filter(g => !S.genres.includes(g)).slice(0, 14).map(g => h("button", { onclick: () => addGenre(g) }, "+ " + g)));
+  renderSuggest();
 }
+// İki satıra sığdığı kadar öneri; ↻ havuzda ilerler
+function renderSuggest(){
+  const pool = (tagPool || PRESET_GENRES).filter(g => !S.genres.includes(g) && !isBanned(g));
+  if (suggestOffset >= pool.length) suggestOffset = 0;
+  const list = pool.slice(suggestOffset).concat(pool.slice(0, suggestOffset)).slice(0, 40);
+  $("#genreSuggest").replaceChildren(...list.map(g => h("button", { onclick: () => addGenre(g) }, "+ " + g)));
+}
+$("#suggestShuffle").onclick = () => {
+  const box = $("#genreSuggest"), top = box.getBoundingClientRect().bottom;
+  const visible = [...box.children].filter(b => b.getBoundingClientRect().top < top - 4).length;
+  suggestOffset += Math.max(visible, 8);
+  renderSuggest();
+};
 function addGenre(g){
-  g = g.toLocaleLowerCase("tr");
+  g = g.toLocaleLowerCase("tr").trim();
   if (S.genres.includes(g)) return;
+  if (isBanned(g)){ toast(`“${g}” yasaklı türler listesinde.`); return; }
   if (S.genres.length >= 8){ toast("En fazla 8 tür ekleyebilirsin."); return; }
   S.genres.push(g); save(); renderGenres(); mountGenre(g, true);
 }
 function removeGenre(g){
   S.genres = S.genres.filter(x => x !== g); save(); renderGenres();
   const r = genreRows.get(g); if (r){ r.release(); r.el.remove(); genreRows.delete(g); }
+  paintMoveButtons();
+}
+function moveGenre(g, dir){
+  const i = S.genres.indexOf(g), j = i + dir;
+  if (i < 0 || j < 0 || j >= S.genres.length) return;
+  [S.genres[i], S.genres[j]] = [S.genres[j], S.genres[i]];
+  save(); renderGenres();
+  for (const x of S.genres) $("#genreRows").append(genreRows.get(x).el);   // DOM'u yeni sıraya göre diz
+  paintMoveButtons();
+  genreRows.get(g).el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+function paintMoveButtons(){
+  S.genres.forEach((g, i) => {
+    const r = genreRows.get(g); if (!r) return;
+    r.up.disabled = i === 0; r.down.disabled = i === S.genres.length - 1;
+  });
 }
 function mountGenre(g, load){
-  const row = new Row({ title: g.replace(/^./, c => c.toLocaleUpperCase("tr")), sub: "", loader: () => genreCandidates(g), removable: true, onRemove: () => removeGenre(g) });
+  const up = h("button", { class: "btn small mv", title: "Yukarı taşı", onclick: () => moveGenre(g, -1) }, "↑");
+  const down = h("button", { class: "btn small mv", title: "Aşağı taşı", onclick: () => moveGenre(g, 1) }, "↓");
+  const row = new Row({ title: g.replace(/^./, c => c.toLocaleUpperCase("tr")), sub: "", loader: () => genreCandidates(g), removable: true, onRemove: () => removeGenre(g), controls: [up, down] });
+  row.up = up; row.down = down;
   genreRows.set(g, row); $("#genreRows").append(row.el);
+  paintMoveButtons();
   if (load) row.refresh();
+}
+
+/* ================= Oturum paneli ================= */
+const SIDEBAR_KEY = "plakci:sidebar";
+function setSidebar(open){
+  document.body.classList.toggle("sess-open", open);
+  try { localStorage.setItem(SIDEBAR_KEY, open ? "1" : "0"); } catch {}
+}
+$("#sessToggle").onclick = () => setSidebar(!document.body.classList.contains("sess-open"));
+$("#sessClose").onclick = () => setSidebar(false);
+$("#sessScrim").onclick = () => setSidebar(false);
+function sessionStats(id){
+  const d = id === SESS.current ? S : (SESS.data[id] || {});
+  return `${(d.liked || []).length} beğeni · ${(d.genres || []).length} tür`;
+}
+function renderSessions(){
+  const cur = SESS.list.find(s => s.id === SESS.current);
+  $("#curSess").textContent = cur?.name || "";
+  $("#sessList").replaceChildren(...SESS.list.map(s => {
+    const item = h("div", { class: "sess-item" + (s.id === SESS.current ? " on" : ""), onclick: () => switchSession(s.id) },
+      h("div", { class: "nm" }, h("b", {}, s.name), h("span", {}, sessionStats(s.id))),
+      h("button", { class: "ic", title: "Adını değiştir", onclick: (e) => { e.stopPropagation(); startRename(item, s); } }, "✎"),
+      h("button", { class: "ic del", title: "Oturumu sil", onclick: (e) => { e.stopPropagation(); deleteSession(s); } }, "🗑"));
+    return item;
+  }));
+}
+function startRename(item, s){
+  const input = h("input", { value: s.name, maxlength: 60, onclick: (e) => e.stopPropagation() });
+  const done = (ok) => {
+    const v = input.value.trim();
+    if (ok && v && v !== s.name){ s.name = v; touchSession(s.id); persistSessionMeta(s.id); }
+    renderSessions();
+  };
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") done(true); if (e.key === "Escape") done(false); });
+  input.addEventListener("blur", () => done(true));
+  item.replaceChildren(input);
+  input.focus(); input.select();
+}
+async function persistSessionMeta(id){
+  try { localStorage.setItem(SESS_KEY, JSON.stringify(SESS)); } catch {}
+  if (sb && userId){
+    const { error } = await sb.from("plakci_sessions").upsert(sessionRow(id));
+    if (error){ console.warn(error); setSyncState("err"); }
+  }
+}
+async function switchSession(id){
+  if (id === SESS.current){ if (innerWidth < 1100) setSidebar(false); return; }
+  save(); await flushSync();
+  applySession(id);
+  save();
+  rebuildSessionUI();
+  if (innerWidth < 1100) setSidebar(false);
+  toast(`“${SESS.list.find(s => s.id === id)?.name}” oturumuna geçildi`);
+}
+async function createSession(){
+  const btn = $("#sessNew"); btn.disabled = true;
+  try {
+    save(); await flushSync();
+    const meta = newSessionMeta(nextSessionName());
+    const data = sessionDefaults();
+    data.genres = await randomGenres(2);
+    SESS.list.push(meta); SESS.data[meta.id] = data;
+    applySession(meta.id);
+    save(); await flushSync();
+    rebuildSessionUI();
+    toast(`${meta.name} açıldı: ${data.genres.join(", ") || "tür yok"}`);
+  } finally { btn.disabled = false; }
+}
+$("#sessNew").onclick = createSession;
+async function deleteSession(s){
+  if (!confirm(`“${s.name}” oturumu ve içindeki tüm beğeni, favori ve listeler kalıcı olarak silinsin mi?`)) return;
+  if (sb && userId){
+    const { error } = await sb.from("plakci_sessions").delete().eq("id", s.id);
+    if (error){ toast("Silinemedi: " + error.message); return; }
+  }
+  SESS.list = SESS.list.filter(x => x.id !== s.id);
+  delete SESS.data[s.id];
+  if (s.id === SESS.current){
+    if (SESS.list.length){ applySession(SESS.list[SESS.list.length - 1].id); save(); rebuildSessionUI(); }
+    else { SESS.current = null; await createSession(); }
+  } else { save(); renderSessions(); }
+  toast(`“${s.name}” silindi`);
+}
+// Oturum değişince ekrandaki her şeyi yeni veriyle kur
+function rebuildSessionUI(){
+  for (const r of genreRows.values()){ r.release(); r.el.remove(); }
+  genreRows.clear();
+  if (moodRow){ moodRow.release(); moodRow.el.remove(); moodRow = null; }
+  forYou.release(); onScreen.clear();
+  courageEl.value = S.courage; paintCourage();
+  updateCounts(); renderGenres(); renderSessions();
+  for (const g of S.genres) mountGenre(g, false);
+  showView("discover");
+  if (S.lastfmKey) loadAll();
+  else forYou.grid.replaceChildren(h("div", { class: "empty" }, "Başlamak için Ayarlar'dan Last.fm API key gir."));
 }
 
 /* ================= Keşif cesareti kaydırıcısı ================= */
@@ -1423,6 +1703,7 @@ $("#importFile").onchange = async (e) => {
 function openSettings(){
   $("#lfmKey").value = S.lastfmKey; $("#antKey").value = S.anthropicKey; $("#aiOn").checked = S.aiEnabled;
   $("#spClient").value = S.spClientId; $("#spAuto").checked = S.spAutoSave;
+  $("#banned").value = (S.bannedGenres || []).join(", ");
   refreshSpUi();
   $("#promptFields").replaceChildren(...Object.entries(PROMPTS).map(([k, p]) => {
     const ta = h("textarea", { id: "pr_" + k, spellcheck: "false" });
@@ -1455,10 +1736,14 @@ $("#saveSettings").onclick = () => {
   S.lastfmKey = $("#lfmKey").value.trim(); S.anthropicKey = $("#antKey").value.trim(); S.aiEnabled = $("#aiOn").checked;
   if ($("#spClient").value.trim() !== S.spClientId){ S.spClientId = $("#spClient").value.trim(); S.sp = null; }
   S.spAutoSave = $("#spAuto").checked;
+  const prevBanned = (S.bannedGenres || []).join("|");
+  S.bannedGenres = [...new Set($("#banned").value.split(",").map(s => s.trim().toLocaleLowerCase("tr")).filter(Boolean))];
+  const bannedChanged = prevBanned !== S.bannedGenres.join("|");
+  if (bannedChanged){ bannedAlbums.clear(); renderSuggest(); }
   const promptsChanged = savePrompts();
   save(); $("#settings").close(); memo.clear(); infoMemo.clear();
   toast(promptsChanged ? "Kaydedildi. Açıklamalar yeni prompt'la yeniden yazılacak." : "Kaydedildi");
-  if ((!hadKey && S.lastfmKey) || (promptsChanged && S.lastfmKey)) loadAll();
+  if ((!hadKey && S.lastfmKey) || ((promptsChanged || bannedChanged) && S.lastfmKey)) loadAll();
 };
 
 function loadAll(){
@@ -1471,10 +1756,14 @@ function loadAll(){
 await ensureAuth();
 courageEl.value = S.courage; paintCourage();
 $("#logoutBtn").hidden = !sb;
-$("#logoutBtn").onclick = async () => { await sb.auth.signOut(); localStorage.removeItem(LS_KEY); location.reload(); };
+$("#logoutBtn").onclick = async () => { await sb.auth.signOut(); localStorage.removeItem(LS_KEY); localStorage.removeItem(SESS_KEY); location.reload(); };
 await spHandleRedirect();
-updateCounts(); renderGenres();
+try { setSidebar(localStorage.getItem(SIDEBAR_KEY) !== "0" && innerWidth >= 1100); } catch {}
+// İlk oturumda hiç tür yoksa 2 rastgele tür ile başla
+if (S.lastfmKey && !S.genres.length && !S.liked.length){ S.genres = await randomGenres(2); save(); }
+updateCounts(); renderGenres(); renderSessions();
 for (const g of S.genres) mountGenre(g, false);
+if (S.lastfmKey) loadTagPool().then(() => renderSuggest());
 if (!S.lastfmKey){ openSettings(); forYou.grid.replaceChildren(h("div", { class: "empty" }, "Başlamak için Ayarlar'dan Last.fm API key gir.")); }
 else loadAll();
 </script>
