@@ -1,0 +1,6 @@
+.env
+.env.*
+# .env.example şu an gerçek değerler içeriyor; şablon olarak yayınlanacaksa önce boşaltılmalı
+.env.example
+dist/
+node_modules/
